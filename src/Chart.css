@@ -1,4 +1,17 @@
-#chart-container {
+.body {
+    padding: 10px;
+    text-align: left;
+}
+.body button {
+    padding: 6px;
+}
+.chart-container {
     width: 100%;
     height: 400px;
+}
+.log-container {
+    width: 100%;
+    height: 400px;
+    overflow-y: scroll;
+    font-size: 0.8em;
 }
