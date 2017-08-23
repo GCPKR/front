@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import logo from './logo.svg';
 import './App.css';
 import Chart from './Chart';
+import * as actions  from './modules';
 
 class App extends Component {
   render() {
