@@ -8,9 +8,12 @@ export default class SSEClient {
   open() {
     this.stream = new EventSource(`http://13.124.119.241/sse?limit=${this.maxData}`);
 
-    this.stream.onopen = () => this.listeners.forEach(listener => listener('open'));
-    this.stream.onerror = (event) => this.listeners.forEach(listener => listener('error', event));
-    this.stream.onmessage = (event) => this.listeners.forEach(listener => listener('message', event.data));
+    this.stream.onopen = () =>  console.log('open');
+    this.stream.onerror = (event) => console.error(event);
+
+    this.listeners.forEach((e) => {
+      this.stream.addEventListener(e.eventName, event => e.listener(e.eventName, JSON.parse(event.data)));
+    });
 
     window.addEventListener('beforeunload', () => this.close());
   }
@@ -18,14 +21,12 @@ export default class SSEClient {
   close() {
     if (this.stream) {
       this.stream.close();
-      this.listeners.forEach(listener => listener('close'))
+      console.log('close');
     }
   }
 
-  addEventListener(listener) {
-    if (typeof listener === 'function') {
-      this.listeners.push(listener);
-    }
+  addEventListener(eventName, listener) {
+    this.listeners.push({ eventName, listener });
   }
 
 }

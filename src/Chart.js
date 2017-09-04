@@ -1,10 +1,9 @@
 import React, { Component } from 'react';
-import HighCharts from 'highcharts';
+import HighCharts from 'highcharts/highstock';
 import './Chart.css';
 import SSEClient from './SSEClient';
 
 const MAX_DATA = 200;
-const MAX_LOG = 1000;
 
 export default class Chart extends Component {
   constructor(props) {
@@ -14,7 +13,7 @@ export default class Chart extends Component {
     };
   }
   componentDidMount() {
-    this.chart = HighCharts.chart('chart-container', {
+    this.chart = HighCharts.stockChart('chart-container', {
       chart: {
         type: 'line',
         animation: false,
@@ -34,37 +33,42 @@ export default class Chart extends Component {
           text: 'Price/Bitcoin'
         }
       },
-      series: [{
-        name: 'RandomCoin',
-        data: []
-      }]
+      series: [
+        { name: 'Prediction', data: [] },
+        { name: 'Real', type: 'candlestick', data: [], tooltip: { valueDecimals: 2 } }
+      ]
     });
+
     this.sse = new SSEClient(MAX_DATA);
 
-    this.sse.addEventListener( (event, data = '') => {
-      this.log(`[${event}]: ${data}`);
-      if (event === 'message') {
-        const serverData = JSON.parse(data);
-        const series = this.chart.series[0];
+    const events = {
+      prediction: {
+        series: this.chart.series[0],
+        toPoint: data => [data.timestamp, data.value],
+      },
+      candle: {
+        series: this.chart.series[1],
+        toPoint: data => [data.timestamp, data.open, data.high, data.low, data.close],
+      },
+    };
+
+    for (let eventName in events) {
+      this.sse.addEventListener(eventName, (eventName, data) => {
+        this.log(`${eventName}: ${data}`);
+        const { series, toPoint } = events[eventName];
         const shift = series.data.length > MAX_DATA;
 
-        serverData.forEach((data) => series.addPoint([data.timestamp, data.value], false, shift));
+        data.forEach((d) => series.addPoint(toPoint(d), false, shift));
 
         this.chart.redraw();
-      }
-    });
+      });
+    }
 
     this.sse.open();
   }
 
   log(log) {
     console.log(log);
-    // const logs = this.state.logs.slice();
-    // logs.push(log);
-    // if (logs.length > MAX_LOG) {
-    //   logs.shift();
-    // }
-    // this.setState({ logs });
   }
 
   closeSSESession() {
